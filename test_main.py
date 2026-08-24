@@ -358,7 +358,7 @@ class TestFreezePhase:
         assert "TOKENIZER_MISMATCH" in data["candidates"][0]["reasonCodes"]
     
     def test_invalid_candidate_files(self):
-        """Test candidate with empty files returns 400 as per specification requirement."""
+        """Test candidate with empty files returns invalid candidate with empty inventory."""
         request = {
             "phase": "freeze",
             "freezeId": "test-freeze-13",
@@ -368,7 +368,7 @@ class TestFreezePhase:
             "candidates": [
                 {
                     "name": "int8",
-                    "files": {},  # Empty files - must be non-empty per specification
+                    "files": {},  # Empty files
                     "loadable": True,
                     "calibrationDigest": "cal123",
                     "tokenizerDigest": "tok123"
@@ -376,8 +376,12 @@ class TestFreezePhase:
             ]
         }
         response = client.post("/quantize", json=request)
-        assert response.status_code == 400
-        assert response.json() == {"error": "INVALID_INPUT"}
+        assert response.status_code == 200
+        data = response.json()
+        assert data["candidates"][0]["status"] == "invalid"
+        assert data["candidates"][0]["inventory"] == []
+        assert data["candidates"][0]["totalBytes"] is None
+        assert data["candidates"][0]["packageDigest"] is None
     
     def test_invalid_freeze_id(self):
         """Test invalid freezeId returns 400."""
