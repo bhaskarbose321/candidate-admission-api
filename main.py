@@ -33,6 +33,13 @@ async def quantize(request: Request):
             content={"error": "INVALID_INPUT"}
         )
     
+    # Ensure body is a dictionary
+    if not isinstance(body, dict):
+        return JSONResponse(
+            status_code=400,
+            content={"error": "INVALID_INPUT"}
+        )
+    
     phase = body.get("phase")
     
     if phase == "freeze":
@@ -96,6 +103,10 @@ async def handle_freeze(body: Dict[str, Any]) -> Dict[str, Any]:
 
 def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
     """Validate freeze request input."""
+    # Ensure body is not None
+    if body is None:
+        return "INVALID_INPUT"
+    
     # Check required fields
     required_fields = ["phase", "freezeId", "calibrationDigest", "tokenizerDigest", "candidates"]
     for field in required_fields:
@@ -383,6 +394,10 @@ async def handle_select(body: Dict[str, Any]) -> Dict[str, Any]:
 
 def validate_select_input(body: Dict[str, Any]) -> Optional[str]:
     """Validate select request input."""
+    # Ensure body is not None
+    if body is None:
+        return "INVALID_INPUT"
+    
     # Check required fields
     required_fields = ["phase", "freezeId", "candidates", "policy", "rows"]
     for field in required_fields:
