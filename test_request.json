@@ -1,0 +1,18 @@
+{
+  "phase": "freeze",
+  "freezeId": "test-freeze-1",
+  "calibrationDigest": "cal123",
+  "tokenizerDigest": "tok123",
+  "allowedUnsupportedReasons": [],
+  "candidates": [
+    {
+      "name": "int8",
+      "files": {
+        "model.safetensors": "test content"
+      },
+      "loadable": true,
+      "calibrationDigest": "cal123",
+      "tokenizerDigest": "tok123"
+    }
+  ]
+}
