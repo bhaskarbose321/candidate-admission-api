@@ -2,8 +2,7 @@ import requests
 import json
 import time
 
-# Replace with your deployed URL
-BASE_URL = "http://localhost:8000"  # Change to your deployed URL
+BASE_URL = "https://candidate-admission-api.onrender.com"
 ENDPOINT = f"{BASE_URL}/quantize"
 headers = {"Content-Type": "application/json"}
 

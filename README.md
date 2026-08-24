@@ -253,6 +253,45 @@ curl -X POST http://localhost:8000/quantize \
   }'
 ```
 
+## Testing the Live Endpoint
+
+You can test the live deployed endpoint using the provided test script:
+
+```bash
+python complete_flow_test.py
+```
+
+This will test the complete API flow including:
+- Valid freeze request
+- Valid select request  
+- Conflict detection
+- Invalid input handling
+
+Or test directly with curl:
+
+```bash
+curl -X POST https://candidate-admission-api.onrender.com/quantize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phase": "freeze",
+    "freezeId": "test-freeze-1",
+    "calibrationDigest": "cal123",
+    "tokenizerDigest": "tok123",
+    "allowedUnsupportedReasons": [],
+    "candidates": [
+      {
+        "name": "int8",
+        "files": {
+          "model.safetensors": "test content"
+        },
+        "loadable": true,
+        "calibrationDigest": "cal123",
+        "tokenizerDigest": "tok123"
+      }
+    ]
+  }'
+```
+
 ## Render Deployment
 
 ### Prerequisites
@@ -296,13 +335,7 @@ After deployment, your API will be available at:
 https://<your-service-name>.onrender.com/quantize
 ```
 
-Replace `<your-service-name>` with the actual name you chose during deployment.
-
-For example, if you named your service `candidate-admission-api`, the endpoint would be:
-
-```
-https://candidate-admission-api.onrender.com/quantize
-```
+**Live Endpoint**: https://candidate-admission-api.onrender.com/quantize
 
 ## Key Features
 
