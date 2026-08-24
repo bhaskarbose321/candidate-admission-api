@@ -166,7 +166,7 @@ def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
         if not isinstance(files, dict):
             return "INVALID_INPUT"
         
-        # If files is empty, allow it but will result in invalid candidate
+        # If files is empty, allow it but will result in invalid candidate (per specification)
         if files:
             # Check filename uniqueness
             filenames = list(files.keys())
