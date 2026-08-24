@@ -163,8 +163,18 @@ def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
         
         # Validate files
         files = candidate["files"]
-        if not isinstance(files, dict):
+        if not isinstance(files, dict) or not files:
             return "INVALID_INPUT"
+        
+        # Check filename uniqueness
+        filenames = list(files.keys())
+        if len(set(filenames)) != len(filenames):
+            return "INVALID_INPUT"
+        
+        # Validate file contents are strings
+        for filename, content in files.items():
+            if not isinstance(content, str):
+                return "INVALID_INPUT"
         
         # Check filename uniqueness
         filenames = list(files.keys())
