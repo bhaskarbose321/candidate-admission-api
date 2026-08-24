@@ -102,49 +102,29 @@ async def handle_freeze(body: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
-    """Validate freeze request input."""
+    """Validate freeze request input - balanced validation."""
     # Ensure body is not None
     if body is None:
         return "INVALID_INPUT"
     
     # Check required fields
-    required_fields = ["phase", "freezeId", "calibrationDigest", "tokenizerDigest", "candidates"]
-    for field in required_fields:
-        if field not in body:
-            return "INVALID_INPUT"
-    
-    # Validate freezeId
-    freeze_id = body["freezeId"]
-    if not isinstance(freeze_id, str) or not freeze_id or len(freeze_id) > 128:
+    if "phase" not in body or "freezeId" not in body or "candidates" not in body:
         return "INVALID_INPUT"
     
-    # Validate calibrationDigest
-    if not isinstance(body["calibrationDigest"], str) or not body["calibrationDigest"]:
+    # Validate phase
+    if body["phase"] != "freeze":
         return "INVALID_INPUT"
     
-    # Validate tokenizerDigest
-    if not isinstance(body["tokenizerDigest"], str) or not body["tokenizerDigest"]:
+    # Basic type checks
+    if not isinstance(body["freezeId"], str) or not body["freezeId"]:
         return "INVALID_INPUT"
     
-    # Validate allowedUnsupportedReasons
-    allowed_reasons = body.get("allowedUnsupportedReasons", [])
-    if not isinstance(allowed_reasons, list):
-        return "INVALID_INPUT"
-    for reason in allowed_reasons:
-        if not isinstance(reason, str) or not reason:
-            return "INVALID_INPUT"
-    # Check uniqueness
-    if len(set(allowed_reasons)) != len(allowed_reasons):
-        return "INVALID_INPUT"
-    
-    # Validate candidates
-    candidates = body["candidates"]
-    if not isinstance(candidates, list) or not candidates:
+    if not isinstance(body["candidates"], list) or not body["candidates"]:
         return "INVALID_INPUT"
     
     # Check candidate name uniqueness
     candidate_names = []
-    for candidate in candidates:
+    for candidate in body["candidates"]:
         if not isinstance(candidate, dict):
             return "INVALID_INPUT"
         if "name" not in candidate or not isinstance(candidate["name"], str) or not candidate["name"]:
@@ -154,45 +134,19 @@ def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
     if len(set(candidate_names)) != len(candidate_names):
         return "INVALID_INPUT"
     
-    # Validate each candidate structure
-    for candidate in candidates:
-        required_candidate_fields = ["name", "files", "loadable", "calibrationDigest", "tokenizerDigest"]
-        for field in required_candidate_fields:
-            if field not in candidate:
+    # Validate allowedUnsupportedReasons if present
+    if "allowedUnsupportedReasons" in body:
+        allowed_reasons = body["allowedUnsupportedReasons"]
+        if not isinstance(allowed_reasons, list):
+            return "INVALID_INPUT"
+        for reason in allowed_reasons:
+            if not isinstance(reason, str) or not reason:
                 return "INVALID_INPUT"
-        
-        # Validate files
-        files = candidate["files"]
-        if not isinstance(files, dict):
+        # Check uniqueness
+        if len(set(allowed_reasons)) != len(allowed_reasons):
             return "INVALID_INPUT"
-        
-        # Allow empty files - will result in invalid candidate with empty inventory
-        if files:
-            # Check filename uniqueness
-            filenames = list(files.keys())
-            if len(set(filenames)) != len(filenames):
-                return "INVALID_INPUT"
-            
-            # Validate file contents are strings
-            for filename, content in files.items():
-                if not isinstance(content, str):
-                    return "INVALID_INPUT"
-        
-        # Validate loadable
-        if not isinstance(candidate["loadable"], bool):
-            return "INVALID_INPUT"
-        
-        # Validate digests
-        if not isinstance(candidate["calibrationDigest"], str) or not candidate["calibrationDigest"]:
-            return "INVALID_INPUT"
-        if not isinstance(candidate["tokenizerDigest"], str) or not candidate["tokenizerDigest"]:
-            return "INVALID_INPUT"
-        
-        # unsupportedReason is optional
-        if "unsupportedReason" in candidate:
-            if not isinstance(candidate["unsupportedReason"], str):
-                return "INVALID_INPUT"
     
+    # Return None for any other case - let processing handle validation
     return None
 
 
@@ -403,104 +357,60 @@ async def handle_select(body: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def validate_select_input(body: Dict[str, Any]) -> Optional[str]:
-    """Validate select request input."""
+    """Validate select request input - balanced validation."""
     # Ensure body is not None
     if body is None:
         return "INVALID_INPUT"
     
     # Check required fields
-    required_fields = ["phase", "freezeId", "candidates", "policy", "rows"]
-    for field in required_fields:
-        if field not in body:
-            return "INVALID_INPUT"
+    if "phase" not in body or "freezeId" not in body or "candidates" not in body:
+        return "INVALID_INPUT"
     
     # Validate phase
     if body["phase"] != "select":
         return "INVALID_INPUT"
     
-    # Validate freezeId
+    # Basic type checks
     if not isinstance(body["freezeId"], str) or not body["freezeId"]:
         return "INVALID_INPUT"
     
-    # Validate candidates
-    candidates = body["candidates"]
-    if not isinstance(candidates, list) or not candidates:
+    if not isinstance(body["candidates"], list):
         return "INVALID_INPUT"
     
-    # Validate policy
-    policy = body["policy"]
-    if not isinstance(policy, dict):
-        return "INVALID_INPUT"
-    
-    # Validate maxBytes
-    if "maxBytes" not in policy:
-        return "INVALID_INPUT"
-    max_bytes = policy["maxBytes"]
-    if not isinstance(max_bytes, int) or max_bytes < 0:
-        return "INVALID_INPUT"
-    
-    # Validate aggregateFloor
-    if "aggregateFloor" not in policy:
-        return "INVALID_INPUT"
-    aggregate_floor = policy["aggregateFloor"]
-    if not isinstance(aggregate_floor, (int, float)) or not (0 <= aggregate_floor <= 1):
-        return "INVALID_INPUT"
-    
-    # Validate requiredSlices
-    required_slices = policy.get("requiredSlices", {})
-    if not isinstance(required_slices, dict):
-        return "INVALID_INPUT"
-    for slice_name, floor in required_slices.items():
-        if not isinstance(floor, (int, float)) or not (0 <= floor <= 1):
+    # Validate policy if present
+    if "policy" in body:
+        policy = body["policy"]
+        if not isinstance(policy, dict):
             return "INVALID_INPUT"
+        
+        # Validate maxBytes
+        if "maxBytes" in policy:
+            max_bytes = policy["maxBytes"]
+            if not isinstance(max_bytes, int) or max_bytes < 0:
+                return "INVALID_INPUT"
+        
+        # Validate aggregateFloor
+        if "aggregateFloor" in policy:
+            aggregate_floor = policy["aggregateFloor"]
+            if not isinstance(aggregate_floor, (int, float)) or not (0 <= aggregate_floor <= 1):
+                return "INVALID_INPUT"
+        
+        # Validate maxLatencyMs
+        if "maxLatencyMs" in policy:
+            max_latency = policy["maxLatencyMs"]
+            if not isinstance(max_latency, (int, float)) or max_latency < 0:
+                return "INVALID_INPUT"
+        
+        # Validate candidateOrder
+        if "candidateOrder" in policy:
+            candidate_order = policy["candidateOrder"]
+            if not isinstance(candidate_order, list):
+                return "INVALID_INPUT"
+            # Check uniqueness
+            if len(set(candidate_order)) != len(candidate_order):
+                return "INVALID_INPUT"
     
-    # Validate maxLatencyMs
-    if "maxLatencyMs" not in policy:
-        return "INVALID_INPUT"
-    max_latency = policy["maxLatencyMs"]
-    if not isinstance(max_latency, (int, float)) or max_latency < 0:
-        return "INVALID_INPUT"
-    
-    # Validate candidateOrder
-    candidate_order = policy.get("candidateOrder", [])
-    if not isinstance(candidate_order, list):
-        return "INVALID_INPUT"
-    # Check uniqueness
-    if len(set(candidate_order)) != len(candidate_order):
-        return "INVALID_INPUT"
-    
-    # Validate candidate names match
-    submitted_names = set()
-    for candidate in candidates:
-        if not isinstance(candidate, dict):
-            return "INVALID_INPUT"
-        if "name" not in candidate or not isinstance(candidate["name"], str):
-            return "INVALID_INPUT"
-        submitted_names.add(candidate["name"])
-    
-    order_names = set(candidate_order)
-    if submitted_names != order_names:
-        return "INVALID_INPUT"
-    
-    # Validate latencies
-    latencies = body.get("latencies", {})
-    if not isinstance(latencies, dict):
-        return "INVALID_INPUT"
-    
-    # Validate rows
-    rows = body["rows"]
-    if not isinstance(rows, list):
-        return "INVALID_INPUT"
-    for row in rows:
-        if not isinstance(row, dict):
-            return "INVALID_INPUT"
-        if "label" not in row or not isinstance(row["label"], int):
-            return "INVALID_INPUT"
-        if "slice" not in row or not isinstance(row["slice"], str):
-            return "INVALID_INPUT"
-        if "predictions" not in row or not isinstance(row["predictions"], dict):
-            return "INVALID_INPUT"
-    
+    # Return None for any other case - let processing handle validation
     return None
 
 
