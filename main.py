@@ -163,20 +163,18 @@ def validate_freeze_input(body: Dict[str, Any]) -> Optional[str]:
         
         # Validate files
         files = candidate["files"]
-        if not isinstance(files, dict):
+        if not isinstance(files, dict) or not files:
             return "INVALID_INPUT"
         
-        # If files is empty, skip additional validation (will result in invalid candidate)
-        if files:
-            # Check filename uniqueness
-            filenames = list(files.keys())
-            if len(set(filenames)) != len(filenames):
+        # Check filename uniqueness
+        filenames = list(files.keys())
+        if len(set(filenames)) != len(filenames):
+            return "INVALID_INPUT"
+        
+        # Validate file contents are strings
+        for filename, content in files.items():
+            if not isinstance(content, str):
                 return "INVALID_INPUT"
-            
-            # Validate file contents are strings
-            for filename, content in files.items():
-                if not isinstance(content, str):
-                    return "INVALID_INPUT"
         
         # Check filename uniqueness
         filenames = list(files.keys())
@@ -282,14 +280,6 @@ def process_freeze_candidate(
 def calculate_inventory(files: Dict[str, str]) -> Dict[str, Any]:
     """Calculate file inventory with UTF-8 byte lengths and SHA-256 hashes."""
     inventory = []
-    
-    # If files is empty, return empty inventory
-    if not files:
-        return {
-            "inventory": [],
-            "totalBytes": None,
-            "packageDigest": None
-        }
     
     try:
         for filename in utf8_byte_sort(list(files.keys())):
